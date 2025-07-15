@@ -1,1 +1,1 @@
-# Six-DOF-Robot-Arm
+# six-dof-robot-arm
