@@ -4,6 +4,7 @@ from rclpy.node import Node
 import time
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
+from digitalio import DigitalInOut
 from board import SCL, SDA
 from busio import I2C
 
@@ -29,11 +30,12 @@ class ServoDriver(Node):
         pca = PCA9685(i2c_bus)
         pca.frequency = 50 #50 Hz for servos
 
-        #default servo channel
+        #initialize servo and pass PCA9685 channel object to servo constructor
         self.servo_channel = 0
-        self.my_servo = servo.Servo(self.servo_channel)
+        self.my_servo = servo.Servo(pca.channels[self.servo_channel])
 
-    #default min_pulse=750, max_pulse=2250, actuation range =180 deg
+    # callback that returns what angle the servo is supposed to be at
+    # default min_pulse=750, max_pulse=2250, actuation range =180 deg
     def angle_callback(self, msg):
         angle = max(0, min(180, msg.data))
         self.my_servo.angle = angle
