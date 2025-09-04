@@ -10,6 +10,7 @@ from busio import I2C
 
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+from sensor_msgs.msg import JointState
 
 #this is a node that subscribes to /joint_angles(in deg) and then outputs a pwm to the servo motors to put them to that angle
 
@@ -18,9 +19,9 @@ class ServoDriver(Node):
     def __init__(self):
         super().__init__('servo_driver')
         
-        self.subscription = self.create_subscription( #not sure about this part, change topic name and message type
-            Float32,
-            '/joint_angle',
+        self.subscription = self.create_subscription(
+            JointState,
+            '/joint_angles',
             self.angle_callback,
             10
         )
@@ -31,15 +32,18 @@ class ServoDriver(Node):
         pca.frequency = 50 #50 Hz for servos
 
         #initialize servo and pass PCA9685 channel object to servo constructor
-        self.servo_channel = 0
-        self.my_servo = servo.Servo(pca.channels[self.servo_channel])
-
+        self.servo_nums = 6
+        self.my_servos = [
+            servo.Servo(pca.channels[i]) for i in range (self.servo_nums)
+            ]
+    
     # callback that returns what angle the servo is supposed to be at
     # default min_pulse=750, max_pulse=2250, actuation range =180 deg
     def angle_callback(self, msg):
-        angle = max(0, min(180, msg.data))
-        self.my_servo.angle = angle
-        print(f"Servo set to {angle} degrees")
+        for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
+            angle = max(0, min(180, msg.data))
+            self.my_servos[i].angle = angle
+            print(f"Servo set to {angle} degrees")
 
 
 def main(args=None):
