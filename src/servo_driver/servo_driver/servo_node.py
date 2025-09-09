@@ -41,7 +41,7 @@ class ServoDriver(Node):
     # default min_pulse=750, max_pulse=2250, actuation range =180 deg
     def angle_callback(self, msg):
         for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
-            angle = max(0, min(180, msg.data))
+            angle = max(0, min(180, angle))
             self.my_servos[i].angle = angle
             print(f"Servo set to {angle} degrees")
 

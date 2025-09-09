@@ -15,23 +15,28 @@ class JointCommandNode(Node):
         )
 
         #publish the joint command to the angle topic
-        self.publisher_ = self.create_publisher(Float32, '/joint_angle', 10)
+        self.publisher_ = self.create_publisher(JointState, '/joint_angles', 10)
 
         #joint map containing joint number and servo channel number
-        #only has one joint for now
         self.joint_map = {
             "joint_0": 0,
             "joint_1": 1,
             "joint_2": 2,
+            "joint_3": 3,
+            "joint_4": 4,
+            "joint_5": 5,
         }
 
-    def joint_callback(self, msg):
-        for i, name in enumerate(msg.name):
-            if name in self.joint_map:
-                angle = math.degrees(msg.position[i]) #convert to degrees
-                angle_msg = Float32()                   #create new ros2 message of type float32
-                angle_msg.data = angle                  #assigns the converted angle into the float32 message
-                self.publisher_.publish(angle_msg)      #publish message
+    def joint_callback(self, msg): #publish list of joint names and associated angles
+        angle_msg = JointState() #create new ros2 message of type joint state
+        angle_msg.name = []   #make a list for the joint names
+        angle_msg.position = []     #make a list for joint angles
+        for i, name in enumerate(msg.name):  #iterate through incoming message, 2 values, name and position
+            if name in self.joint_map:      #if the name is in the joint_map list continue
+                angle = math.degrees(msg.position[i]) #convert i-th position to degrees
+                angle_msg.name.append(name)     #append name to the above list
+                angle_msg.position.append(angle)    #append position to above list
+        self.publisher_.publish(angle_msg)      #publish message
 
 def main(args=None):
     rclpy.init(args=args)
