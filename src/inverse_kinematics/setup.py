@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node = inverse_kinematics.my_node:main'
+            'ik_solver_node = inverse_kinematics.ik_solver_node:main'
         ],
     },
 )
