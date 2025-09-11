@@ -4,12 +4,9 @@ from rclpy.node import Node
 import time
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
-from digitalio import DigitalInOut
 from board import SCL, SDA
 from busio import I2C
 
-from std_msgs.msg import String
-from std_msgs.msg import Float32
 from sensor_msgs.msg import JointState
 
 #this is a node that subscribes to /joint_angles(in deg) and then outputs a pwm to the servo motors to put them to that angle
