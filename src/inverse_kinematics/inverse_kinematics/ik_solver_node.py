@@ -18,13 +18,15 @@ class IKSolverNode(Node):
         def solve_remaining(x_w, y_w, z_w):
             L2 = 3.5
             L3 = 4.4
-            r = math.sqrt(x_w**2+z_w**2)
+            d1 = 3.0
+            r = math.sqrt(x_w**2+y_w**2)
+            s = z_w - d1
 
             #law of cosines for theta_3
-            D = ((r**2 - L2**2 - L3**2)/(2*L2*L3))
+            D = ((r**2 + s**2 - L2**2 - L3**2)/(2*L2*L3))
             D = max(min(D, 1), -1) #clamp to between -1 & 1
             theta_3 = math.acos(D)
-            theta_2 = math.atan2(z_w, math.sqrt(x_w**2 + y_w**2)) - math.atan2(L3*math.sin(theta_3), L2 + L3*math.cos(theta_3))
+            theta_2 = math.atan2(s, r) - math.atan2(L3*math.sin(theta_3), L2 + L3*math.cos(theta_3))
 
             #planar wrist for theta_4
             theta_4 = -(theta_2 + theta_3)
@@ -52,7 +54,7 @@ class IKSolverNode(Node):
         R = quat_to_matrix(q)   #convert quaternion to rotation matrix R
         z_ee = R[:, 2]  #end-effector z-axis
                         #the third column of R is the ee local z-axis expressed in the world/base frame
-        dist_to_wrist_center = 0.1  #distance from wrist center to EE tip
+        dist_to_wrist_center = 4.0  #distance from wrist center to EE tip
 
         #move target orientation from the ee tip to the wrist center
         #x_w, y_w, z_w is now your wrist orientation to solve for
