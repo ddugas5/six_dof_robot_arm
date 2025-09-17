@@ -16,20 +16,37 @@ class IKSolverNode(Node):
     def goal_callback(self, msg: Pose):
         #geometric solver for theta_2, theta_3, theta_4
         def solve_remaining(x_w, y_w, z_w):
-            L2 = 3.5
-            L3 = 4.4
-            d1 = 3.0
+            L1 = 5.363 # shoulder height from the ground
+            L2 = 3.5 #upper arm length
+            L3 = 4.4 #forearm length
             r = math.sqrt(x_w**2+y_w**2)
-            s = z_w - d1
+            z_eff = z_w - L1
+
+            self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
+            self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
 
             #law of cosines for theta_3
-            D = ((r**2 + s**2 - L2**2 - L3**2)/(2*L2*L3))
+            D = ((r**2 + z_eff**2 - L2**2 - L3**2)/(2*L2*L3))
             D = max(min(D, 1), -1) #clamp to between -1 & 1
-            theta_3 = math.acos(D)
-            theta_2 = math.atan2(s, r) - math.atan2(L3*math.sin(theta_3), L2 + L3*math.cos(theta_3))
+            theta_3 = math.acos(D)  # elbow-up, always positive
+            theta_2 = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3), L2 + L3 * math.cos(theta_3))
+
+            # Shift theta_2 and theta_3 to 0–180° range if needed
+            if theta_2 < 0:
+                theta_2 += math.pi  # shift into positive range
+                #theta_3 = -theta_3   # flip elbow angle accordingly
 
             #planar wrist for theta_4
             theta_4 = -(theta_2 + theta_3)
+
+            # debug: angles
+            deg = 180.0 / math.pi
+            self.get_logger().info(
+                f"[DEBUG] thetas (rad): t1={theta_1:.4f}, t2={theta_2:.4f}, t3={theta_3:.4f}, t4={theta_4:.4f}"
+            )
+            self.get_logger().info(
+                f"[DEBUG] thetas (deg): t1={theta_1*deg:.1f}°, t2={theta_2*deg:.1f}°, t3={theta_3*deg:.1f}°, t4={theta_4*deg:.1f}°"
+            )
 
             return theta_2, theta_3, theta_4
         #function for converting from a quaternion to a matrix
@@ -50,11 +67,17 @@ class IKSolverNode(Node):
         y = msg.position.y
         z = msg.position.z
 
+        # debug: raw pose
+        self.get_logger().info(f"[DEBUG] raw Pose: x={x:.4f}, y={y:.4f}, z={z:.4f}  (units: inches?)")
+
         q = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg. orientation.w]
         R = quat_to_matrix(q)   #convert quaternion to rotation matrix R
         z_ee = R[:, 2]  #end-effector z-axis
                         #the third column of R is the ee local z-axis expressed in the world/base frame
-        dist_to_wrist_center = 4.0  #distance from wrist center to EE tip
+        # debug: orientation z axis
+        self.get_logger().info(f"[DEBUG] z_ee (world frame): [{z_ee[0]:.4f}, {z_ee[1]:.4f}, {z_ee[2]:.4f}]")
+
+        dist_to_wrist_center = 3.75  #distance from wrist center to EE tip
 
         #move target orientation from the ee tip to the wrist center
         #x_w, y_w, z_w is now your wrist orientation to solve for
