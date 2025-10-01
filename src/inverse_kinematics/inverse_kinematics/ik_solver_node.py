@@ -8,6 +8,9 @@ from sensor_msgs.msg import JointState
 class IKSolverNode(Node):
     def __init__(self):
         super().__init__('ik_solver_node')
+    # allow selecting elbow configuration: True -> prefer elbow-down (forearm falls down)
+        self.declare_parameter('prefer_elbow_down', True)
+        self.prefer_elbow_down = self.get_parameter('prefer_elbow_down').value
 
         self.subscription_ = self.create_subscription(Pose, '/ee_goal', self.goal_callback, 10) #subscribe to /ee_goal to recieve the goal orientation of the end effector
 
@@ -25,18 +28,45 @@ class IKSolverNode(Node):
             self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
             self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
 
-            #law of cosines for theta_3
-            D = ((r**2 + z_eff**2 - L2**2 - L3**2)/(2*L2*L3))
-            D = max(min(D, 1), -1) #clamp to between -1 & 1
-            theta_3 = math.acos(D)  # elbow-up, always positive
-            theta_2 = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3), L2 + L3 * math.cos(theta_3))
+            # ensure target is within planar reach (L2+L3). If outside, scale slightly inside the reachable boundary
+            planar_dist = math.hypot(r, z_eff)
+            max_reach = L2 + L3
+            if planar_dist > max_reach:
+                scale = (max_reach / planar_dist) * 0.999  # nudge slightly inside
+                r_scaled = r * scale
+                z_eff_scaled = z_eff * scale
+                self.get_logger().warning(
+                    f"[WARN] wrist center out of reach: dist={planar_dist:.4f} in > max_reach={max_reach:.4f} in; scaling r/z_eff by {scale:.4f}"
+                )
+                self.get_logger().info(f"[DEBUG] scaled planar r={r_scaled:.4f} in, s={z_eff_scaled:.4f} in")
+            else:
+                r_scaled = r
+                z_eff_scaled = z_eff
 
-            # Shift theta_2 and theta_3 to 0–180° range if needed
-            if theta_2 < 0:
-                theta_2 += math.pi  # shift into positive range
-                #theta_3 = -theta_3   # flip elbow angle accordingly
+            # law of cosines for theta_3 -> there are two mirror solutions (elbow-up and elbow-down)
+            D = ((r_scaled**2 + z_eff_scaled**2 - L2**2 - L3**2)/(2*L2*L3))
+            D = max(min(D, 1), -1) # clamp to between -1 & 1
 
-            #planar wrist for theta_4
+            # two possible elbow angles
+            theta_3_up = math.acos(D)               # conventional positive (elbow-up)
+            theta_3_down = -theta_3_up              # elbow-down (forearm falls the other way)
+
+            # corresponding shoulder angles for each elbow choice
+            theta_2_up = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3_up), L2 + L3 * math.cos(theta_3_up))
+            theta_2_down = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3_down), L2 + L3 * math.cos(theta_3_down))
+
+            # choose preferred configuration (allow parameter to select elbow-down)
+            if getattr(self, 'prefer_elbow_down', True):
+                theta_2, theta_3 = theta_2_down, theta_3_down
+                chosen = 'elbow-down'
+            else:
+                theta_2, theta_3 = theta_2_up, theta_3_up
+                chosen = 'elbow-up'
+
+            # debug: which solution chosen
+            self.get_logger().info(f"[DEBUG] chosen elbow configuration: {chosen}")
+
+            # planar wrist for theta_4
             theta_4 = -(theta_2 + theta_3)
 
             # debug: angles
@@ -77,7 +107,7 @@ class IKSolverNode(Node):
         # debug: orientation z axis
         self.get_logger().info(f"[DEBUG] z_ee (world frame): [{z_ee[0]:.4f}, {z_ee[1]:.4f}, {z_ee[2]:.4f}]")
 
-        dist_to_wrist_center = 3.75  #distance from wrist center to EE tip
+        dist_to_wrist_center = 4.887  #distance from wrist center to EE tip
 
         #move target orientation from the ee tip to the wrist center
         #x_w, y_w, z_w is now your wrist orientation to solve for
@@ -89,7 +119,7 @@ class IKSolverNode(Node):
         theta_2, theta_3, theta_4 = solve_remaining(x_w, y_w, z_w)
     
         joint_msg = JointState()
-        joint_msg.name = ["joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6"]
+        joint_msg.name = ["joint_0", "joint_1", "joint_2", "joint_3", "joint_4", "joint_5"]
         joint_msg.position = [theta_1, theta_2, theta_3, theta_4, 0.0, 0.0]
         self.publisher_.publish(joint_msg)
 
