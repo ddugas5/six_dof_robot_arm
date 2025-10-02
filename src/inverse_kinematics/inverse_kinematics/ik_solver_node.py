@@ -8,10 +8,6 @@ from sensor_msgs.msg import JointState
 class IKSolverNode(Node):
     def __init__(self):
         super().__init__('ik_solver_node')
-    # allow selecting elbow configuration: True -> prefer elbow-down (forearm falls down)
-        self.declare_parameter('prefer_elbow_down', True)
-        self.prefer_elbow_down = self.get_parameter('prefer_elbow_down').value
-
         self.subscription_ = self.create_subscription(Pose, '/ee_goal', self.goal_callback, 10) #subscribe to /ee_goal to recieve the goal orientation of the end effector
 
         self.publisher_ = self.create_publisher(JointState, '/joint_commands', 10) #publish what each joint angle should look like
@@ -28,43 +24,11 @@ class IKSolverNode(Node):
             self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
             self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
 
-            # ensure target is within planar reach (L2+L3). If outside, scale slightly inside the reachable boundary
-            planar_dist = math.hypot(r, z_eff)
-            max_reach = L2 + L3
-            if planar_dist > max_reach:
-                scale = (max_reach / planar_dist) * 0.999  # nudge slightly inside
-                r_scaled = r * scale
-                z_eff_scaled = z_eff * scale
-                self.get_logger().warning(
-                    f"[WARN] wrist center out of reach: dist={planar_dist:.4f} in > max_reach={max_reach:.4f} in; scaling r/z_eff by {scale:.4f}"
-                )
-                self.get_logger().info(f"[DEBUG] scaled planar r={r_scaled:.4f} in, s={z_eff_scaled:.4f} in")
-            else:
-                r_scaled = r
-                z_eff_scaled = z_eff
-
-            # law of cosines for theta_3 -> there are two mirror solutions (elbow-up and elbow-down)
-            D = ((r_scaled**2 + z_eff_scaled**2 - L2**2 - L3**2)/(2*L2*L3))
+            # law of cosines for theta_3
+            D = ((r**2 + z_eff**2 - L2**2 - L3**2)/(2*L2*L3))
             D = max(min(D, 1), -1) # clamp to between -1 & 1
-
-            # two possible elbow angles
-            theta_3_up = math.acos(D)               # conventional positive (elbow-up)
-            theta_3_down = -theta_3_up              # elbow-down (forearm falls the other way)
-
-            # corresponding shoulder angles for each elbow choice
-            theta_2_up = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3_up), L2 + L3 * math.cos(theta_3_up))
-            theta_2_down = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3_down), L2 + L3 * math.cos(theta_3_down))
-
-            # choose preferred configuration (allow parameter to select elbow-down)
-            if getattr(self, 'prefer_elbow_down', True):
-                theta_2, theta_3 = theta_2_down, theta_3_down
-                chosen = 'elbow-down'
-            else:
-                theta_2, theta_3 = theta_2_up, theta_3_up
-                chosen = 'elbow-up'
-
-            # debug: which solution chosen
-            self.get_logger().info(f"[DEBUG] chosen elbow configuration: {chosen}")
+            theta_3 = math.acos(D)  # elbow-up, always positive
+            theta_2 = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3), L2 + L3 * math.cos(theta_3))
 
             # planar wrist for theta_4
             theta_4 = -(theta_2 + theta_3)
