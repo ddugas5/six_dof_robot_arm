@@ -14,35 +14,51 @@ class IKSolverNode(Node):
 
     def goal_callback(self, msg: Pose):
         #geometric solver for theta_2, theta_3, theta_4
-        def solve_remaining(x_w, y_w, z_w):
+        def solve_remaining(x, y, z):
             L1 = 5.363 # shoulder height from the ground
             L2 = 3.5 #upper arm length
             L3 = 4.4 #forearm length
-            r = math.sqrt(x_w**2+y_w**2)
-            z_eff = z_w - L1
+            r = math.sqrt(x**2+y**2)
+            # z_eff = z_w - L1
 
-            self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
-            self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
+            # self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
+            # self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
 
-            # law of cosines for theta_3
-            D = ((r**2 + z_eff**2 - L2**2 - L3**2)/(2*L2*L3))
-            D = max(min(D, 1), -1) # clamp to between -1 & 1
-            theta_3 = math.acos(D)  # elbow-up, always positive
-            theta_2 = math.atan2(z_eff, r) - math.atan2(L3 * math.sin(theta_3), L2 + L3 * math.cos(theta_3))
+            # calculate theta_2 and theta_3 with the law of cosines
+            phi_1 = np.arccos((L2**2 + r**2 - L3**2)/(2*r*L2))
+            phi_2 = np.arctan(z/x)
+            theta_2 = phi_2 + phi_1
 
-            # planar wrist for theta_4
-            theta_4 = -(theta_2 + theta_3)
+            phi_3 = np.arccos((L3**2 + L2**2 - r**2) / (2 * L3 * L2))
+            theta_3 = phi_3 + np.pi
+            theta_3_motor_space = theta_3 - (np.pi * 2)
+            theta_3_motor_space = theta_3_motor_space * -1.0
 
-            # debug: angles
-            deg = 180.0 / math.pi
-            self.get_logger().info(
-                f"[DEBUG] thetas (rad): t1={theta_1:.4f}, t2={theta_2:.4f}, t3={theta_3:.4f}, t4={theta_4:.4f}"
-            )
-            self.get_logger().info(
-                f"[DEBUG] thetas (deg): t1={theta_1*deg:.1f}°, t2={theta_2*deg:.1f}°, t3={theta_3*deg:.1f}°, t4={theta_4*deg:.1f}°"
-            )
+            # Define the desired orientation of the end effector relative to the base frame 
+            # (i.e. global frame)
+            # This is the target orientation.
+            # The 3x3 rotation matrix of frame 6 relative to frame 0
+            rot_mat_0_6 = np.array([[1.0, 0.0, 0.0],
+                                    [0.0, 1.0, 0.0],
+                                    [0.0, 0.0, 1.0]])
 
-            return theta_2, theta_3, theta_4
+            # The 3x3 rotation matrix of frame 3 relative to frame 0
+            rot_mat_0_3 = np.array([[(np.cos(theta_1))*(np.cos(theta_2 + theta_3)), -np.sin(theta_1), (np.cos(theta_1))*(np.sin(theta_2+theta_3))],
+                                    [(np.sin(theta_1))*(np.cos(theta_2 + theta_3)), -np.cos(theta_1), (-np.sin(theta_1))*(np.sin(theta_2+theta_3))],
+                                    [(-np.sin(theta_2+theta_3)), 0.0, (np.cos(theta_2+theta_3))]])
+
+            #The 3x3 inverse rotation matrix of frame 3 relative to frame 0
+            inv_rot_mat_0_3 = np.linalg.inv(rot_mat_0_3)
+
+            #The 3x3 rotation matrix of frame 6 relative to frame 3
+            rot_mat_3_6 = inv_rot_mat_0_3 @ rot_mat_0_6
+
+            #Extract wrist angles, theta_4, theta_5, theta_6
+            theta_5 = np.arccos(rot_mat_3_6[2, 2])
+            # theta_6 = np.arctan2(rot_mat_3_6[2, 1], -rot_mat_3_6[2, 0])
+            theta_4 = np.arctan2(rot_mat_3_6[1, 2], rot_mat_3_6[0, 2])
+
+            return theta_2, theta_3_motor_space, theta_4, theta_5
         #function for converting from a quaternion to a matrix
         def quat_to_matrix(q):
             #q = [x,y,z,w]
@@ -71,20 +87,20 @@ class IKSolverNode(Node):
         # debug: orientation z axis
         self.get_logger().info(f"[DEBUG] z_ee (world frame): [{z_ee[0]:.4f}, {z_ee[1]:.4f}, {z_ee[2]:.4f}]")
 
-        dist_to_wrist_center = 4.887  #distance from wrist center to EE tip
+        # dist_to_wrist_center = 4.887  #distance from wrist center to EE tip
 
         #move target orientation from the ee tip to the wrist center
         #x_w, y_w, z_w is now your wrist orientation to solve for
-        x_w = x - dist_to_wrist_center * z_ee[0]
-        y_w = y - dist_to_wrist_center * z_ee[1]
-        z_w = z - dist_to_wrist_center * z_ee[2]
+        # x_w = x - dist_to_wrist_center * z_ee[0]
+        # y_w = y - dist_to_wrist_center * z_ee[1]
+        # z_w = z - dist_to_wrist_center * z_ee[2]
 
-        theta_1 = math.atan2(y_w, x_w)
-        theta_2, theta_3, theta_4 = solve_remaining(x_w, y_w, z_w)
+        theta_1 = math.atan2(y, x)
+        theta_2, theta_3_motor_space, theta_4, theta_5 = solve_remaining(x, y, z)
     
         joint_msg = JointState()
         joint_msg.name = ["joint_0", "joint_1", "joint_2", "joint_3", "joint_4", "joint_5"]
-        joint_msg.position = [theta_1, theta_2, theta_3, theta_4, 0.0, 0.0]
+        joint_msg.position = [theta_1, theta_2, theta_3_motor_space, theta_4, theta_5, 0.0]
         self.publisher_.publish(joint_msg)
 
 def main(args=None):
