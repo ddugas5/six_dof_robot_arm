@@ -19,10 +19,6 @@ class IKSolverNode(Node):
             L2 = 3.5 #upper arm length
             L3 = 4.4 #forearm length
             r = math.sqrt(x**2+y**2)
-            # z_eff = z_w - L1
-
-            # self.get_logger().info(f"[DEBUG] wrist center (inches): x_w={x_w:.4f}, y_w={y_w:.4f}, z_w={z_w:.4f}")
-            # self.get_logger().info(f"[DEBUG] planar r={r:.4f} in, s={z_eff:.4f} in  (d1={L1:.4f} in)")
 
             # calculate theta_2 and theta_3 with the law of cosines
             phi_1 = np.arccos((L2**2 + r**2 - L3**2)/(2*r*L2))
@@ -59,6 +55,7 @@ class IKSolverNode(Node):
             theta_4 = np.arctan2(rot_mat_3_6[1, 2], rot_mat_3_6[0, 2])
 
             return theta_2, theta_3_motor_space, theta_4, theta_5
+        
         #function for converting from a quaternion to a matrix
         def quat_to_matrix(q):
             #q = [x,y,z,w]
@@ -87,20 +84,12 @@ class IKSolverNode(Node):
         # debug: orientation z axis
         self.get_logger().info(f"[DEBUG] z_ee (world frame): [{z_ee[0]:.4f}, {z_ee[1]:.4f}, {z_ee[2]:.4f}]")
 
-        # dist_to_wrist_center = 4.887  #distance from wrist center to EE tip
-
-        #move target orientation from the ee tip to the wrist center
-        #x_w, y_w, z_w is now your wrist orientation to solve for
-        # x_w = x - dist_to_wrist_center * z_ee[0]
-        # y_w = y - dist_to_wrist_center * z_ee[1]
-        # z_w = z - dist_to_wrist_center * z_ee[2]
-
         theta_1 = math.atan2(y, x)
-        theta_2, theta_3_motor_space, theta_4, theta_5 = solve_remaining(x, y, z)
+        theta_2, theta_3_motor_space, theta_4 = solve_remaining(x, y, z)
     
         joint_msg = JointState()
         joint_msg.name = ["joint_0", "joint_1", "joint_2", "joint_3", "joint_4", "joint_5"]
-        joint_msg.position = [theta_1, theta_2, theta_3_motor_space, theta_4, theta_5, 0.0]
+        joint_msg.position = [theta_1, theta_2, theta_3_motor_space, theta_4, 0.0, 0.0]
         self.publisher_.publish(joint_msg)
 
 def main(args=None):
