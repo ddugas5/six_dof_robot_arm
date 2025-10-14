@@ -10,9 +10,10 @@ There are several ROS Nodes set up in this workspace.
 * joint_command_node
   * Subscribes to the topic "/joint_commands" where it receives a list of joint angles. The joint angles are then mapped to their associated joint names and then published to the topic "/joint_angles"
 * servo_node
-  * add purpose
+  * Subscribes to "/joint_angles" and then outputs a pwm to servo motors to put them to that angle
+  * Also subscribes to "/servo/joint_5/cmd" to set the gripper to open or closed
 * gripper_node
-  * add purpose
+  * Subscribes to "/gripper_command" and publishes an "open" or "close" to the servo_node's topic "/joint_angles" to control the gripper
 * trajectory_control_node
   * add purpose
 
