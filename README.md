@@ -13,6 +13,8 @@ There are several ROS Nodes set up in this workspace.
   * add purpose
 * gripper_node
   * add purpose
+* trajectory_control_node
+  * add purpose
 
 ## Math  
   
