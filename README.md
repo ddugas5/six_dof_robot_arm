@@ -16,7 +16,8 @@ There are several ROS Nodes set up in this workspace.
 
 ## Math  
   
-![Example Image](Robot Arm FBD.png)
+<img width="563" height="679" alt="Robot Arm FBD" src="https://github.com/user-attachments/assets/c9e46a22-2c18-4b20-a8fe-cf9b8742baaa" />
+
 ### Equation 1
 I solved the inverse kinematics for this 6 DOF robot arm using geometry. Referring to the image above(I haven't put the image in yet), one can see how I derived my equations (except for this first equation). Firstly, we know  
   
