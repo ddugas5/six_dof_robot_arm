@@ -1,13 +1,14 @@
 import rclpy
 from rclpy.node import Node
 
-import time
+import math
 from adafruit_pca9685 import PCA9685
 from adafruit_motor import servo
 from board import SCL, SDA
 from busio import I2C
 
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float32
 
 #this is a node that subscribes to /joint_angles(in deg) and then outputs a pwm to the servo motors to put them to that angle
 
@@ -20,6 +21,13 @@ class ServoDriver(Node):
             JointState,
             '/joint_angles',
             self.angle_callback,
+            10
+        )
+
+        self.gripper_subscription = self.create_subscription(
+            Float32,
+            '/servo/joint_5/cmd',
+            self.gripper_angle_callback,
             10
         )
 
@@ -40,7 +48,12 @@ class ServoDriver(Node):
         for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
             angle = max(0, min(180, angle))
             self.my_servos[i].angle = angle
-            print(f"Servo set to {angle} degrees")
+            print(f"Servo {i} set to {angle} degrees")
+
+    def gripper_angle_callback(self,msg):
+        angle = math.degrees(msg.data)
+        self.my_servos[5].angle = angle
+        print(f"Gripper set to {angle} degrees")
 
 
 def main(args=None):
