@@ -8,7 +8,7 @@ There are several ROS Nodes set up in this workspace.
 * ik_solver_node
   * Subscribes to the topic "/ee_goal" to receive a position and orientation, do the inverse kinematics to find the joint angles to get the wrist center there, and publish the joint_angles to the "/joint_command" topic
 * joint_command_node
-  * add purpose
+  * Subscribes to the topic "/joint_commands" where it receives a list of joint angles. The joint angles are then mapped to their associated joint names and then published to the topic "/joint_angles"
 * servo_node
   * add purpose
 * gripper_node
