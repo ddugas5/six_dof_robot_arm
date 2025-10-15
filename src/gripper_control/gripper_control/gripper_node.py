@@ -15,4 +15,14 @@ class GripperNode(Node):
             10
         )
 
-        #self.publisher_ = self.create_publisher()
+        self.publisher_ = self.create_publisher(Float32, '/servo/joint_5/cmd', 10)
+
+    def gripper_callback(self, msg):
+        cmd_msg = Float32()
+        command = msg.data
+        if command == "True": #open the gripper
+            cmd_msg = 180.0
+            self.publisher_.publish(cmd_msg)
+        else:
+            cmd_msg = 0.0  #close the gripper
+            self.publisher_.publish(cmd_msg)

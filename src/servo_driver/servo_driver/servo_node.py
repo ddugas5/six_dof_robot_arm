@@ -55,7 +55,6 @@ class ServoDriver(Node):
         self.my_servos[5].angle = angle
         print(f"Gripper set to {angle} degrees")
 
-
 def main(args=None):
     rclpy.init(args=args)
 
