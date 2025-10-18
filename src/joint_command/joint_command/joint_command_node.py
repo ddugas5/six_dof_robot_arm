@@ -9,7 +9,7 @@ class JointCommandNode(Node):
         super().__init__('joint_command_node')
         self.subscription = self.create_subscription(
             JointState,
-            '/joint_commands',
+            '/trajectory_commands',
             self.joint_callback,
             10
         )

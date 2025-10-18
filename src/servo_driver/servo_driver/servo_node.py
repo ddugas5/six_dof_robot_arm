@@ -46,12 +46,13 @@ class ServoDriver(Node):
     # default min_pulse=750, max_pulse=2250, actuation range =180 deg
     def angle_callback(self, msg):
         for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
-            angle = max(0, min(180, angle))
+            angle = math.degrees(angle)
             self.my_servos[i].angle = angle
             print(f"Servo {i} set to {angle} degrees")
 
+    #callback returns what angle the gripper servo is at
     def gripper_angle_callback(self,msg):
-        angle = math.degrees(msg.data)
+        angle = float(msg.data)
         self.my_servos[5].angle = angle
         print(f"Gripper set to {angle} degrees")
 

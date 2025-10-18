@@ -18,8 +18,20 @@ def generate_launch_description():
         Node(
             package='servo_driver',
             namespace='servo_driver',
-            executable='servo_driver_node',
-            name='servo_driver_node',
+            executable='servo_node',
+            name='servo_node',
+        ),
+        Node(
+            package='gripper_control',
+            namespace='gripper_control',
+            executable='gripper_node',
+            name='gripper_node',
+        ),
+        Node(
+            package='trajectory_control',
+            namespace='trajectory_control',
+            executable='trajectory_control_node',
+            name='trajectory_control_node',
         )
     ]
 )

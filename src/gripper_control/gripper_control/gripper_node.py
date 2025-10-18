@@ -19,10 +19,25 @@ class GripperNode(Node):
 
     def gripper_callback(self, msg):
         cmd_msg = Float32()
-        command = msg.data
-        if command == "True": #open the gripper
-            cmd_msg = 180.0
-            self.publisher_.publish(cmd_msg)
+        if msg.data: #open the gripper
+            angle = 90.0
         else:
-            cmd_msg = 0.0  #close the gripper
-            self.publisher_.publish(cmd_msg)
+            angle = 0.0  #close the gripper
+
+        angle = max(0.0, min(180.0, float(angle)))
+        cmd_msg.data = angle
+        self.publisher_.publish(cmd_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    gripper_node = GripperNode()
+
+    rclpy.spin(gripper_node)
+
+    gripper_node.destroy_node()
+
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
