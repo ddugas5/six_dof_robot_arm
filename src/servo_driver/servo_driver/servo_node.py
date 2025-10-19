@@ -39,14 +39,14 @@ class ServoDriver(Node):
         #initialize servo and pass PCA9685 channel object to servo constructor
         self.servo_nums = 6
         self.my_servos = [
-            servo.Servo(pca.channels[i]) for i in range (self.servo_nums)
+            servo.Servo(pca.channels[i], min_pulse=500, max_pulse=2500) for i in range (self.servo_nums)
             ]
     
     # callback that returns what angle the servo is supposed to be at
     # default min_pulse=750, max_pulse=2250, actuation range =180 deg
     def angle_callback(self, msg):
         for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
-            angle = math.degrees(angle)
+            # angle = math.degrees(angle)
             angle = max(0.0, min(180.0, angle))
             self.my_servos[i].angle = angle
             print(f"Servo {i} set to {angle} degrees")
