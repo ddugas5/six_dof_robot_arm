@@ -34,6 +34,7 @@ class JointCommandNode(Node):
         for i, name in enumerate(msg.name):  #iterate through incoming message, 2 values, name and position
             if name in self.joint_map:      #if the name is in the joint_map list continue
                 angle = math.degrees(msg.position[i]) #convert i-th position to degrees
+                angle = max(0.0, min(180.0, angle))
                 angle_msg.name.append(name)     #append name to the above list
                 angle_msg.position.append(angle)    #append position to above list
         self.publisher_.publish(angle_msg)      #publish message

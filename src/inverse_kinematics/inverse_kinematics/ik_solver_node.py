@@ -18,11 +18,29 @@ class IKSolverNode(Node):
             L1 = 5.363 # shoulder height from the ground
             L2 = 3.5 #upper arm length
             L3 = 4.4 #forearm length
-            r = math.sqrt(x**2+y**2)
+            
+            # planar distance; avoid division by zero if target lies on base axis
+            r = math.sqrt(x**2+z**2)
+            # if r < 1e-6:
+            #     # target is on the z-axis above/below base — use tiny offset to avoid div0
+            #     r = 1e-6
+
+            # # vertical offset from shoulder joint
+            # z_shoulder = z - L1
+
+            # # law of cosines for angles — clamp inputs to acos to [-1, 1]
+            # cos_phi1 = (L2**2 + r**2 - L3**2) / (2.0 * L2 * r)
+            # cos_phi1 = max(-1.0, min(1.0, cos_phi1))
+            # phi_1 = math.acos(cos_phi1)
+            
+            # # angle from shoulder to wrist in the plane
+            # phi_2 = math.atan2(z_shoulder, r)
 
             # calculate theta_2 and theta_3 with the law of cosines
             phi_1 = np.arccos((L2**2 + r**2 - L3**2)/(2*r*L2))
+
             phi_2 = np.arctan(z/x)
+
             theta_2 = phi_2 + phi_1
 
             phi_3 = np.arccos((L3**2 + L2**2 - r**2) / (2 * L3 * L2))

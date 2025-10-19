@@ -47,6 +47,7 @@ class ServoDriver(Node):
     def angle_callback(self, msg):
         for i, angle in enumerate (msg.position): #using msg.position here because the angle is in the position field of the jointstate message
             angle = math.degrees(angle)
+            angle = max(0.0, min(180.0, angle))
             self.my_servos[i].angle = angle
             print(f"Servo {i} set to {angle} degrees")
 
