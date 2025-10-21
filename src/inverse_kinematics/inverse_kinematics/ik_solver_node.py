@@ -71,9 +71,9 @@ class IKSolverNode(Node):
             # theta_5 = np.arccos(rot_mat_3_6[2, 2])
 
             # theta_6 = np.arctan2(rot_mat_3_6[2, 1], -rot_mat_3_6[2, 0])
-            theta_4 = np.arctan2(rot_mat_3_6[1, 2], rot_mat_3_6[0, 2])
+            # theta_4 = np.arctan2(rot_mat_3_6[1, 2], rot_mat_3_6[0, 2])
 
-            return theta_2, theta_3_motor_space, theta_4
+            return theta_2, theta_3_motor_space#, theta_4
         
         #function for converting from a quaternion to a matrix
         def quat_to_matrix(q):
@@ -99,11 +99,11 @@ class IKSolverNode(Node):
                         #the third column of R is the ee local z-axis expressed in the world/base frame
 
         theta_1 = math.atan2(y, x)
-        theta_2, theta_3_motor_space, theta_4 = solve_remaining(x, y, z)
+        theta_2, theta_3_motor_space = solve_remaining(x, y, z)
     
         joint_msg = JointState()
         joint_msg.name = ["joint_0", "joint_1", "joint_2", "joint_3", "joint_4", "joint_5"]
-        joint_msg.position = [theta_1, theta_2, theta_3_motor_space, theta_4, 0.0]
+        joint_msg.position = [theta_1, theta_2, theta_3_motor_space, 0.349, 0.0] #just pass zeroes for theta four and theta 5, no need to move them
         self.publisher_.publish(joint_msg)
 
 def main(args=None):
