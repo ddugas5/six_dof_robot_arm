@@ -39,7 +39,7 @@ class TrajectoryControl(Node):
         self.move_to_target(target)     #call function move to target for interpolation
 
     def move_to_target(self, target): #when the target pose is received, linearly interpolate between the that and current position
-        steps = 250                 #100 steps between target and current pos
+        steps = 150                 #100 steps between target and current pos
         for i in np.linspace(0, 1, steps):
             step = self.current_position + i * (target - self.current_position) #linear interpolation
             msg = JointState()              #create joint state message

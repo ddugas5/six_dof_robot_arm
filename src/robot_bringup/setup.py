@@ -21,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node = robot_bringup.my_node:main'
+            'demo_node = robot_bringup.demo_node:main'
         ],
     },
 )
