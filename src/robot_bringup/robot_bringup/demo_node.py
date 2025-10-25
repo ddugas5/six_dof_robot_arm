@@ -26,7 +26,7 @@ class DemoNode(Node):
         )
 
         self.pick_up = Pose(
-            position=Point(x=4.0, y=0.0, z=-1.0),
+            position=Point(x=4.0, y=0.0, z=-1.25),
             orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
         )
 
@@ -36,7 +36,7 @@ class DemoNode(Node):
         )
 
         self.place = Pose(
-            position=Point(x=4.0, y=4.0, z=-1.0),
+            position=Point(x=4.0, y=4.0, z=0.0),
             orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
         )
 
@@ -52,7 +52,7 @@ class DemoNode(Node):
         time.sleep(delay)
 
     #publish the pose
-    def publish_pose(self, pose, delay=3.0):
+    def publish_pose(self, pose, delay=4.0):
         self.joint_publisher.publish(pose)
         self.get_logger().info(f"Moving to {pose.position.x}, {pose.position.y}, {pose.position.z}")
         time.sleep(delay)
