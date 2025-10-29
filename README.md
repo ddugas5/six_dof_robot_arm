@@ -20,7 +20,9 @@ There are several ROS Nodes set up in this workspace. These are the core of what
 ## Math  
     
 <img width="563" height="679" alt="Robot Arm FBD" src="https://github.com/user-attachments/assets/c9e46a22-2c18-4b20-a8fe-cf9b8742baaa" />  
+  
 This is an image of the first four degrees of freedom (DOF) of the robot. I am calculating the inverse kinematics for the wrist center of the robot, which is depicted as the final DOF that you can see in the upmost right corner of the image.  
+  
 ### Equation 1
 I solved the inverse kinematics for this 6 DOF robot arm using geometry. Referring to the image above(I haven't put the image in yet), one can see how I derived my equations (except for this first equation). Firstly, we know  
   
