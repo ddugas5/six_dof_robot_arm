@@ -4,7 +4,7 @@
 This is a desktop robot arm that I am building as a personal project to gain experience as a robotics engineer. It has six degrees of freedom and is made from PLA 3D printed parts. I designed it in Solidworks and wrote the code for it on a Raspberry Pi 4B in ROS2/Python. As for the rest of my electronics, I used an Adafruit PCA9685 module for my servo driver and this was powered using a Rapthor 12V 2600mAh battery. I stepped this down to 5V using a (add regulator name).
 
 ## Code
-There are several ROS Nodes set up in this workspace.  
+There are several ROS Nodes set up in this workspace. These are the core of what makes the robot arm move and how they all work together to make the robot arm perform.
 * ik_solver_node
   * Subscribes to the topic "/ee_goal" to receive a position and orientation, do the inverse kinematics to find the joint angles to get the wrist center there, and publish the joint_angles to the "/joint_command" topic
 * joint_command_node
