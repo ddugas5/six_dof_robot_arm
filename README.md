@@ -1,5 +1,7 @@
 # Six DOF Robot Arm
 
+![me](https://github.com/ddugas5/six_dof_robot_arm/blob/main/robot%20arm%20gif.mp4)  
+  
 ## Overview
 This is a desktop robot arm that I am building as a personal project to gain experience as a robotics engineer. It has six degrees of freedom and is made from PLA 3D printed parts. I designed it in Solidworks and wrote the code for it on a Raspberry Pi 4B in ROS2/Python. As for the rest of my electronics, I used an Adafruit PCA9685 module for my servo driver and this was powered using a Rapthor 12V 2600mAh battery. I stepped this down to 5V using a (add regulator name).
 
