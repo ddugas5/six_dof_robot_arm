@@ -15,7 +15,7 @@ There are several ROS Nodes set up in this workspace.
 * gripper_node
   * Subscribes to "/gripper_command" and publishes an "open" or "close" to the servo_node's topic "/joint_angles" to control the gripper
 * trajectory_control_node
-  * add purpose
+  * Subscribes to "/" and uses linear interpolation to produce 100 points between locations. These values are published to the topic "/ee_goal" to be converted to joint angles by the ik solver
 
 ## Math  
   
